@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task-service
+  template:
+    metadata:
+      labels:
+        app: task-service
+    spec:
+      containers:
+      - name: task-service
+        image: task-service:1.0
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8081
+          protocol: TCP
+        env:
+        - name: SPRING_DATA_MONGODB_URI
+          value: mongodb://mongodb:27017/taskdb
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-service
+spec:
+  selector:
+    app: task-service
+  ports:
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+  type: NodePort

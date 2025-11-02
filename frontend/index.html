@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microservices Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 30px;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .service-header h2 {
+            color: #667eea;
+            font-size: 1.8em;
+        }
+        
+        .status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .status.connected {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status.disconnected {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .form-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-warning {
+            background: #f59e0b;
+        }
+        
+        .btn-warning:hover {
+            background: #d97706;
+        }
+        
+        .data-section {
+            margin-top: 20px;
+        }
+        
+        .data-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .items-container {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .item-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+        
+        .item-title {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .item-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .item-actions button {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .item-details {
+            color: #666;
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+        
+        .item-id {
+            font-size: 0.85em;
+            color: #999;
+            font-family: monospace;
+        }
+        
+        .completed-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .pending-badge {
+            display: inline-block;
+            background: #f59e0b;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Microservices Dashboard</h1>
+        
+        <div class="services">
+            <!-- User Service -->
+            <div class="service-card">
+                <div class="service-header">
+                    <h2>👥 User Service</h2>
+                    <span class="status" id="user-status">Checking...</span>
+                </div>
+                
+                <div class="form-section">
+                    <h3>Create User</h3>
+                    <div id="user-message"></div>
+                    <form id="create-user-form">
+                        <div class="form-group">
+                            <label for="user-name">Name</label>
+                            <input type="text" id="user-name" required placeholder="Enter user name">
+                        </div>
+                        <div class="form-group">
+                            <label for="user-email">Email</label>
+                            <input type="email" id="user-email" required placeholder="Enter email address">
+                        </div>
+                        <button type="submit">Create User</button>
+                    </form>
+                </div>
+                
+                <div class="data-section">
+                    <h3>All Users</h3>
+                    <div id="users-list" class="items-container">
+                        <div class="loading">Loading users...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Task Service -->
+            <div class="service-card">
+                <div class="service-header">
+                    <h2>✅ Task Service</h2>
+                    <span class="status" id="task-status">Checking...</span>
+                </div>
+                
+                <div class="form-section">
+                    <h3>Create Task</h3>
+                    <div id="task-message"></div>
+                    <form id="create-task-form">
+                        <div class="form-group">
+                            <label for="task-user">Assign to User</label>
+                            <select id="task-user" required>
+                                <option value="">Select a user</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-title">Title</label>
+                            <input type="text" id="task-title" required placeholder="Enter task title">
+                        </div>
+                        <div class="form-group">
+                            <label for="task-description">Description</label>
+                            <textarea id="task-description" placeholder="Enter task description"></textarea>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="task-completed">
+                            <label for="task-completed" style="margin: 0;">Mark as completed</label>
+                        </div>
+                        <button type="submit">Create Task</button>
+                    </form>
+                </div>
+                
+                <div class="data-section">
+                    <h3>All Tasks</h3>
+                    <div id="tasks-list" class="items-container">
+                        <div class="loading">Loading tasks...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Update these URLs based on your setup
+        const USER_SERVICE_URL = '/api/users';
+        const TASK_SERVICE_URL = '/api/tasks';
+        
+        let users = [];
+        let tasks = [];
+        
+        // Check service status
+        async function checkServiceStatus(url, statusElementId) {
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    document.getElementById(statusElementId).textContent = 'Connected';
+                    document.getElementById(statusElementId).className = 'status connected';
+                } else {
+                    throw new Error('Service unavailable');
+                }
+            } catch (error) {
+                document.getElementById(statusElementId).textContent = 'Disconnected';
+                document.getElementById(statusElementId).className = 'status disconnected';
+            }
+        }
+        
+        // Show message
+        function showMessage(elementId, message, type = 'success') {
+            const msgEl = document.getElementById(elementId);
+            msgEl.innerHTML = `<div class="message ${type}">${message}</div>`;
+            setTimeout(() => msgEl.innerHTML = '', 5000);
+        }
+        
+        // Load Users
+        async function loadUsers() {
+            try {
+                const response = await fetch(USER_SERVICE_URL);
+                users = await response.json();
+                displayUsers();
+                updateUserDropdown();
+            } catch (error) {
+                document.getElementById('users-list').innerHTML = 
+                    '<div class="empty-state">Failed to load users. Make sure the service is running.</div>';
+            }
+        }
+        
+        // Display Users
+        function displayUsers() {
+            const container = document.getElementById('users-list');
+            if (users.length === 0) {
+                container.innerHTML = '<div class="empty-state">No users yet. Create one above!</div>';
+                return;
+            }
+            
+            container.innerHTML = users.map(user => `
+                <div class="item-card">
+                    <div class="item-header">
+                        <div>
+                            <div class="item-title">${user.name}</div>
+                            <div class="item-id">ID: ${user.id}</div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn-warning" onclick="editUser('${user.id}')">Edit</button>
+                            <button class="btn-danger" onclick="deleteUser('${user.id}')">Delete</button>
+                        </div>
+                    </div>
+                    <div class="item-details">
+                        📧 ${user.email}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Update user dropdown
+        function updateUserDropdown() {
+            const select = document.getElementById('task-user');
+            select.innerHTML = '<option value="">Select a user</option>' +
+                users.map(user => `<option value="${user.id}">${user.name}</option>`).join('');
+        }
+        
+        // Create User
+        document.getElementById('create-user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('user-name').value;
+            const email = document.getElementById('user-email').value;
+            
+            try {
+                const response = await fetch(USER_SERVICE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email })
+                });
+                
+                if (response.ok) {
+                    showMessage('user-message', 'User created successfully!');
+                    e.target.reset();
+                    loadUsers();
+                } else {
+                    throw new Error('Failed to create user');
+                }
+            } catch (error) {
+                showMessage('user-message', 'Failed to create user: ' + error.message, 'error');
+            }
+        });
+        
+        // Delete User
+        async function deleteUser(id) {
+            if (!confirm('Are you sure you want to delete this user?')) return;
+            
+            try {
+                const response = await fetch(`${USER_SERVICE_URL}/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showMessage('user-message', 'User deleted successfully!');
+                    loadUsers();
+                } else {
+                    throw new Error('Failed to delete user');
+                }
+            } catch (error) {
+                showMessage('user-message', 'Failed to delete user: ' + error.message, 'error');
+            }
+        }
+        
+        // Edit User
+        async function editUser(id) {
+            const user = users.find(u => u.id === id);
+            if (!user) return;
+            
+            const name = prompt('Enter new name:', user.name);
+            if (!name) return;
+            
+            const email = prompt('Enter new email:', user.email);
+            if (!email) return;
+            
+            try {
+                const response = await fetch(`${USER_SERVICE_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email })
+                });
+                
+                if (response.ok) {
+                    showMessage('user-message', 'User updated successfully!');
+                    loadUsers();
+                } else {
+                    throw new Error('Failed to update user');
+                }
+            } catch (error) {
+                showMessage('user-message', 'Failed to update user: ' + error.message, 'error');
+            }
+        }
+        
+        // Load Tasks
+        async function loadTasks() {
+            try {
+                const response = await fetch(TASK_SERVICE_URL);
+                tasks = await response.json();
+                displayTasks();
+            } catch (error) {
+                document.getElementById('tasks-list').innerHTML = 
+                    '<div class="empty-state">Failed to load tasks. Make sure the service is running.</div>';
+            }
+        }
+        
+        // Display Tasks
+        function displayTasks() {
+            const container = document.getElementById('tasks-list');
+            if (tasks.length === 0) {
+                container.innerHTML = '<div class="empty-state">No tasks yet. Create one above!</div>';
+                return;
+            }
+            
+            container.innerHTML = tasks.map(task => {
+                const user = users.find(u => u.id === task.userId);
+                const userName = user ? user.name : 'Unknown User';
+                
+                return `
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div>
+                                <div class="item-title">${task.title}</div>
+                                <div class="item-id">ID: ${task.id}</div>
+                            </div>
+                            <div class="item-actions">
+                                <button class="btn-warning" onclick="toggleTaskStatus('${task.id}', ${!task.completed})">
+                                    ${task.completed ? 'Mark Pending' : 'Complete'}
+                                </button>
+                                <button class="btn-danger" onclick="deleteTask('${task.id}')">Delete</button>
+                            </div>
+                        </div>
+                        <div class="item-details">
+                            📝 ${task.description || 'No description'}<br>
+                            👤 Assigned to: ${userName}<br>
+                            ${task.completed ? '<span class="completed-badge">✓ Completed</span>' : '<span class="pending-badge">⏳ Pending</span>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Create Task
+        document.getElementById('create-task-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById('task-user').value;
+            const title = document.getElementById('task-title').value;
+            const description = document.getElementById('task-description').value;
+            const completed = document.getElementById('task-completed').checked;
+            
+            try {
+                const response = await fetch(TASK_SERVICE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, title, description, completed })
+                });
+                
+                if (response.ok) {
+                    showMessage('task-message', 'Task created successfully!');
+                    e.target.reset();
+                    loadTasks();
+                } else {
+                    throw new Error('Failed to create task');
+                }
+            } catch (error) {
+                showMessage('task-message', 'Failed to create task: ' + error.message, 'error');
+            }
+        });
+        
+        // Toggle Task Status
+        async function toggleTaskStatus(id, completed) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+            
+            try {
+                const response = await fetch(`${TASK_SERVICE_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...task, completed })
+                });
+                
+                if (response.ok) {
+                    showMessage('task-message', 'Task updated successfully!');
+                    loadTasks();
+                } else {
+                    throw new Error('Failed to update task');
+                }
+            } catch (error) {
+                showMessage('task-message', 'Failed to update task: ' + error.message, 'error');
+            }
+        }
+        
+        // Delete Task
+        async function deleteTask(id) {
+            if (!confirm('Are you sure you want to delete this task?')) return;
+            
+            try {
+                const response = await fetch(`${TASK_SERVICE_URL}/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showMessage('task-message', 'Task deleted successfully!');
+                    loadTasks();
+                } else {
+                    throw new Error('Failed to delete task');
+                }
+            } catch (error) {
+                showMessage('task-message', 'Failed to delete task: ' + error.message, 'error');
+            }
+        }
+        
+        // Initialize
+        checkServiceStatus(USER_SERVICE_URL, 'user-status');
+        checkServiceStatus(TASK_SERVICE_URL, 'task-status');
+        loadUsers();
+        loadTasks();
+        
+        // Refresh data every 10 seconds
+        setInterval(() => {
+            loadUsers();
+            loadTasks();
+        }, 10000);
+    </script>
+</body>
+</html>
