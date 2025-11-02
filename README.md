@@ -1,5 +1,12 @@
 # Microservices Kubernetes Project - Complete Guide
 
+## 🖼️ Screenshot of Demo
+
+<img width="1918" height="956" alt="Screenshot 2025-11-02 at 10 48 33 PM" src="https://github.com/user-attachments/assets/b32f86fc-b117-4753-9f5c-92c8da075d20" />
+
+<img width="1918" height="956" alt="Screenshot 2025-11-02 at 10 48 33 PM" src="https://github.com/user-attachments/assets/c8ae1041-021b-481d-9bb0-1c7301185e32" />
+
+
 ## 📋 Table of Contents
 - [Project Overview](#project-overview)
 - [Architecture](#architecture)
