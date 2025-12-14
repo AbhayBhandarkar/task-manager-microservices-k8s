@@ -1,0 +1,9 @@
+C:\projects\task-manager-microservices-k8s\agent-service\src\main\java\com\example\agentservice\AgentServiceApplication.java
+C:\projects\task-manager-microservices-k8s\agent-service\src\main\java\com\example\agentservice\config\CorsConfig.java
+C:\projects\task-manager-microservices-k8s\agent-service\src\main\java\com\example\agentservice\controller\AgentController.java
+C:\projects\task-manager-microservices-k8s\agent-service\src\main\java\com\example\agentservice\model\FileUploadResponse.java
+C:\projects\task-manager-microservices-k8s\agent-service\src\main\java\com\example\agentservice\model\OllamaRequest.java
+C:\projects\task-manager-microservices-k8s\agent-service\src\main\java\com\example\agentservice\model\OllamaResponse.java
+C:\projects\task-manager-microservices-k8s\agent-service\src\main\java\com\example\agentservice\model\TaskAnalysis.java
+C:\projects\task-manager-microservices-k8s\agent-service\src\main\java\com\example\agentservice\service\OllamaService.java
+C:\projects\task-manager-microservices-k8s\agent-service\src\main\java\com\example\agentservice\service\TaskAnalysisService.java

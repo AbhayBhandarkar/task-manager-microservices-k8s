@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent-service
+  template:
+    metadata:
+      labels:
+        app: agent-service
+    spec:
+      containers:
+      - name: agent-service
+        image: agent-service:1.0
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8083
+          protocol: TCP
+        env:
+        - name: OLLAMA_URL
+          value: "http://host.docker.internal:11434"
+        - name: OLLAMA_MODEL
+          value: "phi3:mini"
+        - name: OLLAMA_VISION_MODEL
+          value: "llava:7b-q2_K"
+        - name: OLLAMA_NUM_THREAD
+          value: "4"
+        - name: OLLAMA_NUM_GPU
+          value: "0"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-service
+spec:
+  selector:
+    app: agent-service
+  ports:
+  - port: 8083
+    targetPort: 8083
+    protocol: TCP
+  type: NodePort
+

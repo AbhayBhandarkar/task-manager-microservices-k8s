@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .nav-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        
+        .card h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        
+        .items-container {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .item-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+        
+        .item-title {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .item-actions button {
+            white-space: nowrap;
+        }
+        
+        .item-details {
+            color: #666;
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        .badge.completed {
+            background: #10b981;
+            color: white;
+        }
+        
+        .badge.pending {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .badge.uploaded {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👨‍🏫 Teacher Dashboard</h1>
+        
+        
+        <!-- Create User Section -->
+        <div class="card">
+            <h2>Create User</h2>
+            <div id="user-message"></div>
+            <form id="create-user-form">
+                <div class="form-group">
+                    <label for="user-name">Name *</label>
+                    <input type="text" id="user-name" required placeholder="Enter user name">
+                </div>
+                <div class="form-group">
+                    <label for="user-email">Email *</label>
+                    <input type="email" id="user-email" required placeholder="Enter email address">
+                </div>
+                <div class="form-group">
+                    <label for="user-role">Role *</label>
+                    <select id="user-role" required>
+                        <option value="teacher">Teacher</option>
+                        <option value="student">Student</option>
+                    </select>
+                </div>
+                <button type="submit">Create User</button>
+            </form>
+        </div>
+        
+        <!-- Create Task Section -->
+        <div class="card">
+            <h2>Create New Task</h2>
+            <div id="task-message"></div>
+            <form id="create-task-form">
+                <div class="form-group">
+                    <label for="task-title">Task Title *</label>
+                    <input type="text" id="task-title" required placeholder="Enter task title">
+                </div>
+                <div class="form-group">
+                    <label for="task-description">Description</label>
+                    <textarea id="task-description" placeholder="Enter task description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="task-subject">Subject (Optional)</label>
+                    <input type="text" id="task-subject" placeholder="e.g., Mathematics, Science">
+                </div>
+                <div class="form-group">
+                    <label>Assign to Students *</label>
+                    <div id="students-checkbox-container" class="checkbox-group">
+                        <div class="loading">Loading students...</div>
+                    </div>
+                </div>
+                <button type="submit">Create Task</button>
+            </form>
+        </div>
+        
+        <!-- Students List -->
+        <div class="card">
+            <h2>Students</h2>
+            <div id="students-list" class="items-container">
+                <div class="loading">Loading students...</div>
+            </div>
+        </div>
+        
+        <!-- Tasks List -->
+        <div class="card">
+            <h2>All Tasks 
+                <button onclick="analyzeAllTasks()" style="float: right; padding: 10px 20px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                    🤖 ANALYZE ALL TASKS
+                </button>
+            </h2>
+            <div id="tasks-list" class="items-container">
+                <div class="loading">Loading tasks...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const USER_SERVICE_URL = '/api/users';
+        const TASK_SERVICE_URL = '/api/tasks';
+        
+        let students = [];
+        let teachers = [];
+        let tasks = [];
+        let currentTeacherId = null;
+        
+        // Show message
+        function showMessage(elementId, message, type = 'success') {
+            const msgEl = document.getElementById(elementId);
+            msgEl.innerHTML = `<div class="message ${type}">${message}</div>`;
+            setTimeout(() => msgEl.innerHTML = '', 5000);
+        }
+        
+        // Create User
+        document.getElementById('create-user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('user-name').value;
+            const email = document.getElementById('user-email').value;
+            const role = document.getElementById('user-role').value;
+            
+            try {
+                const response = await fetch(USER_SERVICE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, role })
+                });
+                
+                if (response.ok) {
+                    showMessage('user-message', `${role} created successfully!`, 'success');
+                    e.target.reset();
+                    loadUsers();
+                    loadTasks();
+                } else {
+                    throw new Error('Failed to create user');
+                }
+            } catch (error) {
+                showMessage('user-message', 'Failed to create user: ' + error.message, 'error');
+            }
+        });
+        
+        // Load Users
+        async function loadUsers() {
+            try {
+                const response = await fetch(USER_SERVICE_URL);
+                const allUsers = await response.json();
+                students = allUsers.filter(u => u.role === 'student' || !u.role);
+                teachers = allUsers.filter(u => u.role === 'teacher');
+                
+                // Set current teacher (first teacher or create one)
+                if (teachers.length > 0) {
+                    currentTeacherId = teachers[0].id;
+                } else {
+                    // Create a default teacher if none exists
+                    const teacherResponse = await fetch(USER_SERVICE_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: 'Default Teacher', email: 'teacher@example.com', role: 'teacher' })
+                    });
+                    const teacher = await teacherResponse.json();
+                    currentTeacherId = teacher.id;
+                    teachers.push(teacher);
+                }
+                
+                displayStudents();
+                updateStudentCheckboxes();
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('students-list').innerHTML = 
+                    '<div class="empty-state">Failed to load students.</div>';
+            }
+        }
+        
+        // Display Students
+        function displayStudents() {
+            const container = document.getElementById('students-list');
+            if (students.length === 0) {
+                container.innerHTML = '<div class="empty-state">No students yet. Create students in the system.</div>';
+                return;
+            }
+            container.innerHTML = students.map(student => `
+                <div class="item-card">
+                    <div class="item-header">
+                        <div>
+                            <div class="item-title">${student.name}</div>
+                            <div style="font-size: 0.85em; color: #999; font-family: monospace;">ID: ${student.id}</div>
+                        </div>
+                    </div>
+                    <div class="item-details">
+                        📧 ${student.email}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Update Student Checkboxes
+        function updateStudentCheckboxes() {
+            const container = document.getElementById('students-checkbox-container');
+            if (students.length === 0) {
+                container.innerHTML = '<div class="empty-state">No students available</div>';
+                return;
+            }
+            container.innerHTML = students.map(student => `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="student-${student.id}" value="${student.id}">
+                    <label for="student-${student.id}" style="margin: 0;">${student.name}</label>
+                </div>
+            `).join('');
+        }
+        
+        // Load Tasks
+        async function loadTasks() {
+            try {
+                const response = await fetch(TASK_SERVICE_URL);
+                tasks = await response.json();
+                // Filter tasks by current teacher
+                if (currentTeacherId) {
+                    tasks = tasks.filter(t => t.teacherId === currentTeacherId);
+                }
+                displayTasks();
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                document.getElementById('tasks-list').innerHTML = 
+                    '<div class="empty-state">Failed to load tasks.</div>';
+            }
+        }
+        
+        // Display Tasks
+        function displayTasks() {
+            const container = document.getElementById('tasks-list');
+            console.log('=== DISPLAYING TASKS ===', 'Count:', tasks.length);
+            if (tasks.length === 0) {
+                container.innerHTML = '<div class="empty-state">No tasks yet. Create one above!</div>';
+                return;
+            }
+            const html = tasks.map(task => {
+                console.log('Rendering task:', task.id, task.title);
+                const assignedStudents = task.studentIds || (task.studentId ? [task.studentId] : []);
+                const studentNames = assignedStudents.map(sId => {
+                    const student = students.find(s => s.id === sId);
+                    return student ? student.name : 'Unknown';
+                }).join(', ');
+                
+                const taskHtml = `
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div>
+                                <div class="item-title">${task.title}</div>
+                                <div style="font-size: 0.85em; color: #999; font-family: monospace;">ID: ${task.id}</div>
+                            </div>
+                            <div class="item-actions">
+                                <button onclick="analyzeTask('${task.id}')" style="padding: 10px 20px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; margin-right: 8px;">
+                                    🤖 Analyze
+                                </button>
+                            </div>
+                        </div>
+                        <div class="item-details">
+                            📝 ${task.description || 'No description'}<br>
+                            ${task.subject ? `📚 Subject: ${task.subject}<br>` : ''}
+                            👨‍🏫 Teacher: ${task.teacherName || 'Unknown'}<br>
+                            👥 Assigned to: ${studentNames || 'No students assigned'}<br>
+                            ${task.fileUploaded ? '<span class="badge uploaded">📎 File Uploaded</span>' : ''}
+                            ${task.taskDone ? '<span class="badge completed">✓ Task Done</span>' : '<span class="badge pending">⏳ Pending</span>'}
+                            ${task.grade !== null && task.grade !== undefined ? `<span class="badge" style="background: #8b5cf6;">Grade: ${task.grade}/100</span>` : ''}
+                            <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; border: 3px solid #8b5cf6; box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);">
+                                <button onclick="analyzeTask('${task.id}')" style="width: 100%; padding: 18px 24px; background: white; color: #8b5cf6; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                    🤖 ANALYZE THIS TASK NOW
+                                </button>
+                            </div>
+                            <div id="analysis-${task.id}" style="margin-top: 15px;"></div>
+                        </div>
+                    </div>
+                `;
+                console.log('Task HTML includes analyze button:', taskHtml.includes('ANALYZE'));
+                return taskHtml;
+            }).join('');
+            console.log('Setting container HTML, length:', html.length);
+            container.innerHTML = html;
+            console.log('Container now has', container.children.length, 'children');
+        }
+        
+        // Analyze All Tasks
+        async function analyzeAllTasks() {
+            if (tasks.length === 0) {
+                alert('No tasks to analyze!');
+                return;
+            }
+            console.log('Analyzing all', tasks.length, 'tasks...');
+            for (const task of tasks) {
+                await analyzeTask(task.id);
+                await new Promise(resolve => setTimeout(resolve, 500)); // Small delay between analyses
+            }
+            alert('All tasks analyzed!');
+        }
+        
+        // Analyze Task
+        async function analyzeTask(taskId) {
+            console.log('=== ANALYZE BUTTON CLICKED ===', taskId);
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) {
+                console.error('Task not found:', taskId);
+                alert('Task not found!');
+                return;
+            }
+            
+            const analysisDiv = document.getElementById(`analysis-${taskId}`);
+            if (!analysisDiv) {
+                console.error('Analysis div not found for task:', taskId);
+                alert('Analysis area not found!');
+                return;
+            }
+            analysisDiv.innerHTML = '<div class="loading">Analyzing...</div>';
+            
+            try {
+                const response = await fetch('/api/agent/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: task.id,
+                        title: task.title,
+                        description: task.description,
+                        completed: task.completed || false,
+                        fileUploaded: task.fileUploaded || false,
+                        taskDone: task.taskDone || false
+                    })
+                });
+                
+                if (response.ok) {
+                    const analysis = await response.json();
+                    const statusMismatch = analysis.markedCompleted !== analysis.actuallyCompleted;
+                    analysisDiv.innerHTML = `
+                        <div style="padding: 10px; background: ${statusMismatch ? '#fef3c7' : '#d1fae5'}; border-radius: 5px; border-left: 3px solid ${statusMismatch ? '#f59e0b' : '#10b981'}; margin-top: 10px;">
+                            <strong>🤖 AI Agent Analysis:</strong><br>
+                            <span style="font-size: 0.9em;">
+                                ${statusMismatch ? '⚠️ <strong>Status Mismatch Detected!</strong><br>' : ''}
+                                Actually Completed: <strong>${analysis.actuallyCompleted ? 'Yes ✅' : 'No ❌'}</strong><br>
+                                Confidence: <strong>${(analysis.confidence * 100).toFixed(0)}%</strong><br>
+                                Reasoning: ${analysis.reasoning || 'N/A'}<br>
+                                Recommendation: ${analysis.recommendation || 'N/A'}
+                            </span>
+                        </div>
+                    `;
+                    // Reload tasks to update status
+                    setTimeout(() => loadTasks(), 1000);
+                } else {
+                    throw new Error('Failed to analyze task');
+                }
+            } catch (error) {
+                analysisDiv.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Create Task
+        document.getElementById('create-task-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('task-title').value;
+            const description = document.getElementById('task-description').value;
+            const subject = document.getElementById('task-subject').value;
+            
+            // Get selected students
+            const selectedStudents = Array.from(document.querySelectorAll('#students-checkbox-container input[type="checkbox"]:checked'))
+                .map(cb => cb.value);
+            
+            if (selectedStudents.length === 0) {
+                showMessage('task-message', 'Please select at least one student.', 'error');
+                return;
+            }
+            
+            if (!currentTeacherId) {
+                showMessage('task-message', 'Teacher ID not found. Please refresh the page.', 'error');
+                return;
+            }
+            
+            try {
+                // Get teacher name
+                const currentTeacher = teachers.find(t => t.id === currentTeacherId);
+                const teacherName = currentTeacher ? currentTeacher.name : 'Unknown Teacher';
+                
+                // Get student names
+                const selectedStudentNames = selectedStudents.map(sId => {
+                    const student = students.find(s => s.id === sId);
+                    return student ? student.name : 'Unknown Student';
+                });
+                
+                // Create task for each student (or single task with multiple students for groups)
+                const taskData = {
+                    title,
+                    description,
+                    teacherId: currentTeacherId,
+                    teacherName: teacherName,
+                    studentIds: selectedStudents,
+                    studentNames: selectedStudentNames,
+                    subject: subject || null,
+                    fileUploaded: false,
+                    taskDone: false,
+                    completed: false
+                };
+                
+                const response = await fetch(TASK_SERVICE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(taskData)
+                });
+                
+                if (response.ok) {
+                    showMessage('task-message', 'Task created successfully!');
+                    e.target.reset();
+                    loadTasks();
+                } else {
+                    throw new Error('Failed to create task');
+                }
+            } catch (error) {
+                showMessage('task-message', 'Failed to create task: ' + error.message, 'error');
+            }
+        });
+        
+        // Initialize
+        loadUsers();
+        loadTasks();
+        
+        // Refresh data every 10 seconds
+        setInterval(() => {
+            loadUsers();
+            loadTasks();
+        }, 10000);
+    </script>
+</body>
+</html>
+

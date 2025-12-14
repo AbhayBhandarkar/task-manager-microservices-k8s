@@ -363,14 +363,22 @@
         // Configuration - Update these URLs based on your setup
         const USER_SERVICE_URL = '/api/users';
         const TASK_SERVICE_URL = '/api/tasks';
+        const AGENT_SERVICE_URL = '/api/agent';
         
         let users = [];
         let tasks = [];
+        let taskAnalyses = {}; // Store agent analyses by task ID
         
         // Check service status
         async function checkServiceStatus(url, statusElementId) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:371',message:'checkServiceStatus entry',data:{url,statusElementId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
             try {
                 const response = await fetch(url);
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:373',message:'checkServiceStatus response',data:{url,status:response.status,ok:response.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 if (response.ok) {
                     document.getElementById(statusElementId).textContent = 'Connected';
                     document.getElementById(statusElementId).className = 'status connected';
@@ -378,6 +386,9 @@
                     throw new Error('Service unavailable');
                 }
             } catch (error) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:380',message:'checkServiceStatus error',data:{url,error:error.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 document.getElementById(statusElementId).textContent = 'Disconnected';
                 document.getElementById(statusElementId).className = 'status disconnected';
             }
@@ -392,12 +403,24 @@
         
         // Load Users
         async function loadUsers() {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:394',message:'loadUsers entry',data:{url:USER_SERVICE_URL},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
             try {
                 const response = await fetch(USER_SERVICE_URL);
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:396',message:'loadUsers fetch response',data:{url:USER_SERVICE_URL,status:response.status,ok:response.ok,statusText:response.statusText},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 users = await response.json();
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:397',message:'loadUsers parsed data',data:{usersCount:users.length,users:users},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                // #endregion
                 displayUsers();
                 updateUserDropdown();
             } catch (error) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:400',message:'loadUsers error',data:{url:USER_SERVICE_URL,error:error.message,stack:error.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 document.getElementById('users-list').innerHTML = 
                     '<div class="empty-state">Failed to load users. Make sure the service is running.</div>';
             }
@@ -405,12 +428,20 @@
         
         // Display Users
         function displayUsers() {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:407',message:'displayUsers entry',data:{usersCount:users.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
             const container = document.getElementById('users-list');
             if (users.length === 0) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:409',message:'displayUsers empty array',data:{usersCount:0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                // #endregion
                 container.innerHTML = '<div class="empty-state">No users yet. Create one above!</div>';
                 return;
             }
-            
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:414',message:'displayUsers rendering',data:{usersCount:users.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
             container.innerHTML = users.map(user => `
                 <div class="item-card">
                     <div class="item-header">
@@ -510,27 +541,83 @@
         
         // Load Tasks
         async function loadTasks() {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:512',message:'loadTasks entry',data:{url:TASK_SERVICE_URL},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
             try {
                 const response = await fetch(TASK_SERVICE_URL);
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:514',message:'loadTasks fetch response',data:{url:TASK_SERVICE_URL,status:response.status,ok:response.ok,statusText:response.statusText},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 tasks = await response.json();
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:515',message:'loadTasks parsed data',data:{tasksCount:tasks.length,tasks:tasks},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                // #endregion
                 displayTasks();
             } catch (error) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:517',message:'loadTasks error',data:{url:TASK_SERVICE_URL,error:error.message,stack:error.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 document.getElementById('tasks-list').innerHTML = 
                     '<div class="empty-state">Failed to load tasks. Make sure the service is running.</div>';
             }
         }
         
+        // Analyze Task with Agent
+        async function analyzeTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            try {
+                showMessage('task-message', 'Analyzing task with AI agent...', 'success');
+                const response = await fetch(`${AGENT_SERVICE_URL}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: task.id,
+                        title: task.title,
+                        description: task.description,
+                        completed: task.completed || false,
+                        fileUploaded: task.fileUploaded || false,
+                        taskDone: task.taskDone || false
+                    })
+                });
+                
+                if (response.ok) {
+                    const analysis = await response.json();
+                    taskAnalyses[taskId] = analysis;
+                    displayTasks(); // Refresh to show analysis
+                    showMessage('task-message', 'Task analysis completed!', 'success');
+                } else {
+                    throw new Error('Failed to analyze task');
+                }
+            } catch (error) {
+                showMessage('task-message', 'Failed to analyze task: ' + error.message, 'error');
+            }
+        }
+        
         // Display Tasks
         function displayTasks() {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:524',message:'displayTasks entry',data:{tasksCount:tasks.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
             const container = document.getElementById('tasks-list');
             if (tasks.length === 0) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:526',message:'displayTasks empty array',data:{tasksCount:0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                // #endregion
                 container.innerHTML = '<div class="empty-state">No tasks yet. Create one above!</div>';
                 return;
             }
-            
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:531',message:'displayTasks rendering',data:{tasksCount:tasks.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
             container.innerHTML = tasks.map(task => {
                 const user = users.find(u => u.id === task.userId);
                 const userName = user ? user.name : 'Unknown User';
+                const analysis = taskAnalyses[task.id];
+                const hasAnalysis = analysis !== undefined;
+                const statusMismatch = hasAnalysis && analysis.markedCompleted !== analysis.actuallyCompleted;
                 
                 return `
                     <div class="item-card">
@@ -540,6 +627,9 @@
                                 <div class="item-id">ID: ${task.id}</div>
                             </div>
                             <div class="item-actions">
+                                <button style="background: #8b5cf6; margin-right: 8px;" onclick="analyzeTask('${task.id}')" title="Analyze with AI Agent">
+                                    🤖 Analyze
+                                </button>
                                 <button class="btn-warning" onclick="toggleTaskStatus('${task.id}', ${!task.completed})">
                                     ${task.completed ? 'Mark Pending' : 'Complete'}
                                 </button>
@@ -550,6 +640,18 @@
                             📝 ${task.description || 'No description'}<br>
                             👤 Assigned to: ${userName}<br>
                             ${task.completed ? '<span class="completed-badge">✓ Completed</span>' : '<span class="pending-badge">⏳ Pending</span>'}
+                            ${hasAnalysis ? `
+                                <div style="margin-top: 10px; padding: 10px; background: ${statusMismatch ? '#fef3c7' : '#d1fae5'}; border-radius: 5px; border-left: 3px solid ${statusMismatch ? '#f59e0b' : '#10b981'};">
+                                    <strong>🤖 AI Agent Analysis:</strong><br>
+                                    <span style="font-size: 0.9em;">
+                                        ${statusMismatch ? '⚠️ <strong>Status Mismatch Detected!</strong><br>' : ''}
+                                        Actually Completed: <strong>${analysis.actuallyCompleted ? 'Yes' : 'No'}</strong><br>
+                                        Confidence: <strong>${(analysis.confidence * 100).toFixed(0)}%</strong><br>
+                                        Reasoning: ${analysis.reasoning || 'N/A'}<br>
+                                        Recommendation: ${analysis.recommendation || 'N/A'}
+                                    </span>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -624,6 +726,9 @@
         }
         
         // Initialize
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/f9356a5e-ac06-4b9c-95df-82670b3767c6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:626',message:'Initialization started',data:{userUrl:USER_SERVICE_URL,taskUrl:TASK_SERVICE_URL},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         checkServiceStatus(USER_SERVICE_URL, 'user-status');
         checkServiceStatus(TASK_SERVICE_URL, 'task-status');
         loadUsers();

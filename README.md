@@ -26,6 +26,7 @@
 A simple microservices-based Task Management System with:
 - **User Service**: Manages users (CRUD operations)
 - **Task Service**: Manages tasks (CRUD operations)
+- **Agent Service**: AI-powered task completion tracking using Ollama
 - **MongoDB**: Database for both services
 - **Frontend**: Web UI dashboard for all operations
 - **Kubernetes**: Orchestration using Minikube
@@ -51,18 +52,24 @@ A simple microservices-based Task Management System with:
     ┌────┴────┐
     │         │
     ▼         ▼
-┌─────────┐ ┌─────────┐
-│  User   │ │  Task   │
-│ Service │ │ Service │
-│ :8082   │ │ :8081   │
-└────┬────┘ └────┬────┘
-     │           │
-     └─────┬─────┘
-           ▼
-      ┌─────────┐
-      │ MongoDB │
-      │ :27017  │
-      └─────────┘
+┌─────────┐ ┌─────────┐ ┌─────────┐
+│  User   │ │  Task   │ │ Agent  │
+│ Service │ │ Service │ │ Service│
+│ :8082   │ │ :8081   │ │ :8083  │
+└────┬────┘ └────┬────┘ └────┬───┘
+     │           │            │
+     └─────┬─────┘            │
+           ▼                  │
+      ┌─────────┐             │
+      │ MongoDB │             │
+      │ :27017  │             │
+      └─────────┘             │
+                              │
+                         ┌────▼────┐
+                         │ Ollama  │
+                         │ :11434  │
+                         │ (Host)  │
+                         └─────────┘
 ```
 
 All components run as Docker containers orchestrated by Kubernetes in Minikube.
@@ -79,6 +86,7 @@ These tools should already be installed on your MacOS:
 - **Minikube** (Local Kubernetes)
 - **kubectl** (Kubernetes CLI)
 - **VSCode** (IDE with Java extensions)
+- **Ollama** (Local LLM - for agent-service) - [Install from ollama.ai](https://ollama.ai)
 
 ---
 
@@ -117,6 +125,27 @@ These tools should already be installed on your MacOS:
 │   ├── pom.xml
 │   └── Dockerfile
 │
+├── agent-service/
+│   ├── src/
+│   │   └── main/
+│   │       ├── java/com/example/agentservice/
+│   │       │   ├── AgentServiceApplication.java
+│   │       │   ├── model/
+│   │       │   │   ├── TaskAnalysis.java
+│   │       │   │   ├── OllamaRequest.java
+│   │       │   │   └── OllamaResponse.java
+│   │       │   ├── service/
+│   │       │   │   ├── OllamaService.java
+│   │       │   │   └── TaskAnalysisService.java
+│   │       │   └── controller/
+│   │       │       └── AgentController.java
+│   │       └── resources/
+│   │           └── application.properties
+│   ├── target/
+│   │   └── agent-service-0.0.1-SNAPSHOT.jar
+│   ├── pom.xml
+│   └── Dockerfile
+│
 ├── frontend/
 │   ├── index.html
 │   ├── nginx.conf
@@ -126,6 +155,7 @@ These tools should already be installed on your MacOS:
     ├── mongodb-deployment.yaml
     ├── task-service-deployment.yaml
     ├── user-service-deployment.yaml
+    ├── agent-service-deployment.yaml
     └── frontend-deployment.yaml
 ```
 
@@ -144,7 +174,27 @@ open -a Docker
 colima start
 ```
 
-### Step 2: Start Minikube
+### Step 2: Install and Start Ollama (Required for Agent Service)
+
+```bash
+# Install Ollama (if not already installed)
+# Visit https://ollama.ai and download for your OS
+# Or use: curl -fsSL https://ollama.ai/install.sh | sh
+
+# Start Ollama service
+ollama serve
+
+# Pull a model (in a separate terminal)
+ollama pull llama3.2
+# Or use: ollama pull mistral, ollama pull codellama, etc.
+
+# Verify Ollama is running
+curl http://localhost:11434/api/tags
+```
+
+**Note**: Ollama must be running on your host machine (not in Kubernetes) for the agent-service to connect to it.
+
+### Step 3: Start Minikube
 
 ```bash
 # Start Minikube cluster
@@ -164,14 +214,14 @@ apiserver: Running
 kubeconfig: Configured
 ```
 
-### Step 3: Check if Images Exist (First Time Skip This)
+### Step 4: Check if Images Exist (First Time Skip This)
 
 ```bash
 # Use Minikube's Docker environment
 eval $(minikube docker-env)
 
 # Check if images exist
-docker images | grep -E "(task-service|user-service|frontend)"
+docker images | grep -E "(task-service|user-service|frontend|agent-service)"
 ```
 
 **If images don't exist** (first time or after cleanup):
@@ -190,9 +240,14 @@ docker build -t user-service:1.0 .
 # Build frontend
 cd ~/Downloads/microservices-k8s/frontend
 docker build -t frontend:1.0 .
+
+# Build agent-service
+cd ~/Downloads/microservices-k8s/agent-service
+mvn clean package -DskipTests
+docker build -t agent-service:1.0 .
 ```
 
-### Step 4: Deploy to Kubernetes
+### Step 5: Deploy to Kubernetes
 
 ```bash
 cd ~/Downloads/microservices-k8s/k8s-manifests
@@ -201,6 +256,7 @@ cd ~/Downloads/microservices-k8s/k8s-manifests
 kubectl apply -f mongodb-deployment.yaml
 kubectl apply -f task-service-deployment.yaml
 kubectl apply -f user-service-deployment.yaml
+kubectl apply -f agent-service-deployment.yaml
 kubectl apply -f frontend-deployment.yaml
 
 # Wait for all pods to be ready (may take 1-2 minutes)
@@ -215,10 +271,11 @@ NAME                            READY   STATUS    RESTARTS   AGE
 mongodb-xxx                     1/1     Running   0          2m
 task-service-xxx                1/1     Running   0          2m
 user-service-xxx                1/1     Running   0          2m
+agent-service-xxx               1/1     Running   0          2m
 frontend-xxx                    1/1     Running   0          2m
 ```
 
-### Step 5: Access the Dashboard
+### Step 6: Access the Dashboard
 
 ```bash
 # Open the frontend dashboard in your browser
@@ -269,8 +326,15 @@ minikube delete
 1. Open: `minikube service frontend`
 2. **Create Users**: Fill in name and email, click "Create User"
 3. **Create Tasks**: Select user, add title/description, click "Create Task"
-4. **Update**: Click "Edit" on users or "Complete/Mark Pending" on tasks
-5. **Delete**: Click "Delete" buttons
+4. **Analyze Tasks with AI**: Click "🤖 Analyze" button on any task to get AI-powered completion analysis
+5. **Update**: Click "Edit" on users or "Complete/Mark Pending" on tasks
+6. **Delete**: Click "Delete" buttons
+
+**Agent Service Features**:
+- Analyzes if tasks are actually completed based on their content
+- Detects mismatches between marked status and actual completion
+- Provides confidence scores and recommendations
+- Uses Ollama LLM for intelligent task analysis
 
 ### Using curl Commands
 
@@ -305,6 +369,12 @@ curl -X PUT http://localhost:8081/api/tasks/TASK_ID_HERE \
 
 # Delete a task
 curl -X DELETE http://localhost:8081/api/tasks/TASK_ID_HERE
+
+# Analyze a task with agent service
+kubectl port-forward service/agent-service 8083:8083 &
+curl -X POST http://localhost:8083/api/agent/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"id":"TASK_ID","title":"Learn K8s","description":"Deploy microservices","completed":false}'
 ```
 
 ### Using Postman
@@ -536,6 +606,45 @@ kubectl exec -it $(kubectl get pod -l app=frontend -o jsonpath='{.items[0].metad
 apk add curl
 curl http://user-service:8082/api/users
 curl http://task-service:8081/api/tasks
+exit
+```
+
+### Problem: Agent service not working / Can't connect to Ollama
+
+**Solution**: Ollama not running or not accessible
+
+```bash
+# Check if Ollama is running on host
+curl http://localhost:11434/api/tags
+
+# If not running, start Ollama
+ollama serve
+
+# Verify model is available
+ollama list
+
+# If model not found, pull it
+ollama pull llama3.2
+
+# For Minikube, agent-service uses host.docker.internal to reach host
+# If this doesn't work, you may need to:
+# 1. Get your host IP: minikube ssh "route -n get default" | grep gateway
+# 2. Update agent-service-deployment.yaml to use that IP instead of host.docker.internal
+```
+
+### Problem: Agent analysis returns errors
+
+**Solution**: Check agent-service logs
+
+```bash
+# View agent-service logs
+kubectl logs deployment/agent-service
+
+# Check if Ollama is accessible from the pod
+kubectl exec -it $(kubectl get pod -l app=agent-service -o jsonpath='{.items[0].metadata.name}') -- sh
+# Inside pod:
+apk add curl
+curl http://host.docker.internal:11434/api/tags
 exit
 ```
 

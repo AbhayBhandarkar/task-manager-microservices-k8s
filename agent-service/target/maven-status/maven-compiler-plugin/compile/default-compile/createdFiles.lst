@@ -1,0 +1,9 @@
+com\example\agentservice\model\OllamaResponse.class
+com\example\agentservice\AgentServiceApplication.class
+com\example\agentservice\model\FileUploadResponse.class
+com\example\agentservice\service\TaskAnalysisService.class
+com\example\agentservice\controller\AgentController.class
+com\example\agentservice\service\OllamaService.class
+com\example\agentservice\config\CorsConfig.class
+com\example\agentservice\model\OllamaRequest.class
+com\example\agentservice\model\TaskAnalysis.class
