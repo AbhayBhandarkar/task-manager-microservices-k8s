@@ -24,4 +24,7 @@ public class Task {
     private boolean completed; // Legacy field for backward compatibility
     private String fileUrl; // URL/path to uploaded file
     private Double grade; // Optional grade assigned by vision model
+    private String analysisReasoning; // AI analysis reasoning/feedback
+    private String analysisRecommendation; // AI analysis recommendation
+    private Double analysisConfidence; // AI confidence score (0.0 to 1.0)
 }

@@ -464,6 +464,12 @@
                                 <button onclick="analyzeTask('${task.id}')" style="padding: 10px 20px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; margin-right: 8px;">
                                     🤖 Analyze
                                 </button>
+                                <button onclick="editTask('${task.id}')" style="padding: 10px 20px; background: #fbbf24; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; margin-right: 8px;">
+                                    ✏️ Edit
+                                </button>
+                                <button onclick="deleteTask('${task.id}')" style="padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                                    🗑️ Delete
+                                </button>
                             </div>
                         </div>
                         <div class="item-details">
@@ -625,6 +631,76 @@
                 showMessage('task-message', 'Failed to create task: ' + error.message, 'error');
             }
         });
+        
+        // Edit Task
+        async function editTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) {
+                alert('Task not found!');
+                return;
+            }
+            
+            const newTitle = prompt('Edit Task Title:', task.title);
+            if (newTitle === null) return; // User cancelled
+            
+            const newDescription = prompt('Edit Task Description:', task.description || '');
+            if (newDescription === null) return; // User cancelled
+            
+            const newSubject = prompt('Edit Subject (optional):', task.subject || '');
+            if (newSubject === null) return; // User cancelled
+            
+            try {
+                const response = await fetch(`${TASK_SERVICE_URL}/${taskId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...task,
+                        title: newTitle.trim() || task.title,
+                        description: newDescription.trim() || task.description,
+                        subject: newSubject.trim() || task.subject
+                    })
+                });
+                
+                if (response.ok) {
+                    showMessage('task-message', '✅ Task updated successfully!');
+                    loadTasks();
+                } else {
+                    throw new Error('Failed to update task');
+                }
+            } catch (error) {
+                console.error('Error updating task:', error);
+                showMessage('task-message', 'Failed to update task: ' + error.message, 'error');
+            }
+        }
+        
+        // Delete Task
+        async function deleteTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) {
+                alert('Task not found!');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete "${task.title}"?\n\nThis will permanently remove the task from the database.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${TASK_SERVICE_URL}/${taskId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('task-message', '✅ Task deleted successfully!');
+                    loadTasks();
+                } else {
+                    throw new Error('Failed to delete task');
+                }
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                showMessage('task-message', 'Failed to delete task: ' + error.message, 'error');
+            }
+        }
         
         // Initialize
         loadUsers();

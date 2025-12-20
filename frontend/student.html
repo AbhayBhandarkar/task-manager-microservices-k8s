@@ -320,6 +320,18 @@
         let currentStudentId = null;
         let tasks = [];
         
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+        
         // Show message
         function showMessage(message, type = 'success') {
             // Create a temporary message element
@@ -404,12 +416,28 @@
         
         // Load Tasks
         async function loadTasks() {
-            if (!currentStudentId) return;
+            if (!currentStudentId) {
+                console.log('No student selected');
+                return;
+            }
+            
+            console.log('Loading tasks for student:', currentStudentId);
             
             try {
                 // Get tasks assigned to this student
-                const response = await fetch(`${TASK_SERVICE_URL}/student/${currentStudentId}`);
-                tasks = await response.json();
+                const url = `${TASK_SERVICE_URL}/student/${currentStudentId}`;
+                console.log('Fetching from:', url);
+                
+                const response = await fetch(url);
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Received tasks:', data);
+                tasks = data;
                 
                 // Update studentName in tasks if missing (for backward compatibility)
                 const currentStudent = students.find(s => s.id === currentStudentId);
@@ -421,11 +449,12 @@
                     return task;
                 });
                 
+                console.log('Displaying', tasks.length, 'tasks');
                 displayTasks();
             } catch (error) {
                 console.error('Error loading tasks:', error);
                 document.getElementById('tasks-list').innerHTML = 
-                    '<div class="empty-state">Failed to load tasks.</div>';
+                    '<div class="empty-state">Failed to load tasks. Error: ' + error.message + '</div>';
             }
         }
         
@@ -452,6 +481,14 @@
                                 <div class="item-title">${task.title}</div>
                                 <div style="font-size: 0.85em; color: #999; font-family: monospace; margin-top: 5px;">ID: ${task.id}</div>
                             </div>
+                            <div class="item-actions">
+                                <button onclick="editTask('${task.id}')" style="padding: 8px 16px; background: #fbbf24; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 8px;">
+                                    ✏️ Edit
+                                </button>
+                                <button onclick="deleteTask('${task.id}')" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                                    🗑️ Delete
+                                </button>
+                            </div>
                         </div>
                         <div class="item-details">
                             📝 ${task.description || 'No description'}<br>
@@ -476,6 +513,21 @@
                                     <a href="${task.fileUrl}" target="_blank" style="color: #3b82f6; text-decoration: none;">
                                         📎 View Uploaded File
                                     </a>
+                                </div>
+                            ` : ''}
+                            
+                            ${task.analysisReasoning || task.analysisRecommendation ? `
+                                <div class="analysis-section">
+                                    <h4>🤖 LLM Analysis</h4>
+                                    ${task.analysisConfidence !== null && task.analysisConfidence !== undefined ? `
+                                        <p><strong>Confidence:</strong> ${Math.round(task.analysisConfidence * 100)}%</p>
+                                    ` : ''}
+                                    ${task.analysisReasoning ? `
+                                        <p><strong>Reasoning:</strong> ${escapeHtml(task.analysisReasoning)}</p>
+                                    ` : ''}
+                                    ${task.analysisRecommendation ? `
+                                        <p><strong>Recommendation:</strong> ${escapeHtml(task.analysisRecommendation)}</p>
+                                    ` : ''}
                                 </div>
                             ` : ''}
                             
@@ -540,8 +592,16 @@
                     const analysis = await response.json();
                     console.log('Analysis result:', analysis);
                     showMessage('File uploaded successfully! Task marked as complete.', 'success');
-                    // Reload tasks to show updated status
-                    setTimeout(() => loadTasks(), 2000);
+                    
+                    // Clear file input
+                    fileInput.value = '';
+                    
+                    // Reload tasks to show updated status with a longer delay to ensure DB update completes
+                    console.log('Waiting 3 seconds before reloading tasks...');
+                    setTimeout(() => {
+                        console.log('Reloading tasks now...');
+                        loadTasks();
+                    }, 3000);
                 } else {
                     const errorText = await response.text();
                     console.error('Upload failed:', response.status, errorText);
@@ -637,6 +697,72 @@
             } catch (error) {
                 console.error('Error marking task complete:', error);
                 showMessage('Failed to mark task as complete: ' + error.message, 'error');
+            }
+        }
+        
+        // Edit Task
+        async function editTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) {
+                showMessage('Task not found!', 'error');
+                return;
+            }
+            
+            const newTitle = prompt('Edit Task Title:', task.title);
+            if (newTitle === null) return; // User cancelled
+            
+            const newDescription = prompt('Edit Task Description:', task.description || '');
+            if (newDescription === null) return; // User cancelled
+            
+            try {
+                const response = await fetch(`${TASK_SERVICE_URL}/${taskId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...task,
+                        title: newTitle.trim() || task.title,
+                        description: newDescription.trim() || task.description
+                    })
+                });
+                
+                if (response.ok) {
+                    showMessage('✅ Task updated successfully!', 'success');
+                    setTimeout(() => loadTasks(), 1000);
+                } else {
+                    throw new Error('Failed to update task');
+                }
+            } catch (error) {
+                console.error('Error updating task:', error);
+                showMessage('Failed to update task: ' + error.message, 'error');
+            }
+        }
+        
+        // Delete Task
+        async function deleteTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) {
+                showMessage('Task not found!', 'error');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete "${task.title}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${TASK_SERVICE_URL}/${taskId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('✅ Task deleted successfully!', 'success');
+                    setTimeout(() => loadTasks(), 1000);
+                } else {
+                    throw new Error('Failed to delete task');
+                }
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                showMessage('Failed to delete task: ' + error.message, 'error');
             }
         }
         

@@ -1,812 +1,661 @@
-# Microservices Kubernetes Project - Complete Guide
+# 🎓 Task Manager Microservices with Kubernetes & AI Analysis
 
-## 🖼️ Screenshot of Demo
-
-<img width="1918" height="956" alt="Screenshot 2025-11-02 at 10 48 33 PM" src="https://github.com/user-attachments/assets/b32f86fc-b117-4753-9f5c-92c8da075d20" />
-
-<img width="1918" height="956" alt="Screenshot 2025-11-02 at 10 48 33 PM" src="https://github.com/user-attachments/assets/c8ae1041-021b-481d-9bb0-1c7301185e32" />
-
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.7-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-1.34-blue.svg)](https://kubernetes.io/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green.svg)](https://www.mongodb.com/)
+[![Ollama](https://img.shields.io/badge/Ollama-LLM-purple.svg)](https://ollama.ai/)
 
 ## 📋 Table of Contents
-- [Project Overview](#project-overview)
-- [Architecture](#architecture)
-- [Prerequisites](#prerequisites)
-- [Project Structure](#project-structure)
-- [Starting the Project](#starting-the-project)
-- [Stopping the Project](#stopping-the-project)
-- [Testing the APIs](#testing-the-apis)
-- [Useful Commands](#useful-commands)
-- [Troubleshooting](#troubleshooting)
-- [What Was Built](#what-was-built)
+- [Project Overview](#-project-overview)
+- [Key Features](#-key-features)
+- [Architecture](#-architecture)
+- [Prerequisites](#-prerequisites)
+- [Quick Start](#-quick-start)
+- [MongoDB Commands](#-mongodb-commands)
+- [API Endpoints](#-api-endpoints)
+- [MVC Architecture](#-mvc-architecture)
+- [Troubleshooting](#-troubleshooting)
 
 ---
 
 ## 🎯 Project Overview
 
-A simple microservices-based Task Management System with:
-- **User Service**: Manages users (CRUD operations)
-- **Task Service**: Manages tasks (CRUD operations)
-- **Agent Service**: AI-powered task completion tracking using Ollama
-- **MongoDB**: Database for both services
-- **Frontend**: Web UI dashboard for all operations
-- **Kubernetes**: Orchestration using Minikube
-- **Docker**: Containerization
+A production-ready microservices-based Task Management System with AI-powered analysis featuring:
 
-**Cost**: Zero! Everything runs locally.
+### Core Services
+- **Eureka Server** (Port 8761): Service discovery and registration
+- **API Gateway** (Port 8080): Centralized routing and load balancing
+- **User Service** (Port 8082): User management with role-based access
+- **Task Service** (Port 8081): Complete CRUD operations with assignment tracking
+- **Agent Service** (Port 8083): AI-powered task analysis using Ollama LLM
+- **MongoDB** (Port 27017): Persistent storage (userdb & taskdb)
+- **Teacher Frontend** & **Student Frontend**: Role-specific dashboards
+
+---
+
+## ✨ Key Features
+
+### 🎯 Complete CRUD Operations
+- ✅ Create, Read, Update, Delete for Users and Tasks
+- ✅ Real-time updates across dashboards
+- ✅ Confirmation dialogs for destructive operations
+- ✅ Edit buttons with inline prompts
+- ✅ Delete with MongoDB cascade
+
+### 🤖 AI-Powered Task Analysis (Persistent)
+- ✅ **Persistent Analysis**: AI feedback saved in MongoDB
+- ✅ **Analysis Fields**: `analysisReasoning`, `analysisRecommendation`, `analysisConfidence`
+- ✅ **File Upload Support**: Submit assignments for AI review
+- ✅ **Survives Reload**: Analysis persists in database
+- ✅ **CPU-Friendly Mode**: Optimized for local development
+- ✅ **Confidence Scores**: 0.0-1.0 reliability indicators
+
+### 👥 Role-Based Dashboards
+
+**Teacher Dashboard:**
+- Create and assign tasks to students
+- Analyze student submissions
+- Grade assignments
+- Edit/Delete tasks
+- View all student tasks
+
+**Student Dashboard:**
+- View assigned tasks
+- Upload assignment files
+- View persistent AI analysis
+- Track completion status
+- Edit/Delete own tasks
+
+### 🏗️ Enterprise Architecture
+- **Service Discovery**: Eureka Server for dynamic registration
+- **API Gateway**: Single entry point with load balancing
+- **Microservices**: Spring Boot independent services
+- **MongoDB Persistence**: All data saved in database
+- **Centralized Logging**: Slf4j with detailed logs
+- **Health Monitoring**: Built-in health checks
 
 ---
 
 ## 🏗️ Architecture
 
-```
-┌─────────────┐
-│   Browser   │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────┐
-│  Frontend (UI)  │
-│   (Nginx:80)    │
-└────────┬────────┘
-         │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
-┌─────────┐ ┌─────────┐ ┌─────────┐
-│  User   │ │  Task   │ │ Agent  │
-│ Service │ │ Service │ │ Service│
-│ :8082   │ │ :8081   │ │ :8083  │
-└────┬────┘ └────┬────┘ └────┬───┘
-     │           │            │
-     └─────┬─────┘            │
-           ▼                  │
-      ┌─────────┐             │
-      │ MongoDB │             │
-      │ :27017  │             │
-      └─────────┘             │
-                              │
-                         ┌────▼────┐
-                         │ Ollama  │
-                         │ :11434  │
-                         │ (Host)  │
-                         └─────────┘
-```
+### System Architecture Diagram
 
-All components run as Docker containers orchestrated by Kubernetes in Minikube.
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         VIEW LAYER                          │
+│  ┌──────────────────┐  ┌──────────────────┐                │
+│  │  student.html    │  │  teacher.html    │   (Frontend)   │
+│  │  (Nginx:8081)    │  │  (Nginx:8082)    │                │
+│  └──────────────────┘  └──────────────────┘                │
+└─────────────────────────────────────────────────────────────┘
+                          ↓ HTTP Requests
+┌─────────────────────────────────────────────────────────────┐
+│                   API GATEWAY (Port 8080)                   │
+│              Routes requests to microservices                │
+└─────────────────────────────────────────────────────────────┘
+                          ↓ Service Discovery
+┌─────────────────────────────────────────────────────────────┐
+│              EUREKA SERVER (Port 8761)                      │
+│              Service Registry & Discovery                    │
+└─────────────────────────────────────────────────────────────┘
+                          ↓ Load Balancing
+┌─────────────────────────────────────────────────────────────┐
+│                   CONTROLLER LAYER                          │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐       │
+│  │UserController│ │TaskController│ │AgentController│       │
+│  │  (Port 8082) │ │  (Port 8081) │ │  (Port 8083) │       │
+│  │   @Slf4j     │ │   @Slf4j     │ │   @Slf4j     │       │
+│  └──────────────┘ └──────────────┘ └──────────────┘       │
+└─────────────────────────────────────────────────────────────┘
+                          ↓ Business Logic
+┌─────────────────────────────────────────────────────────────┐
+│                    SERVICE LAYER                            │
+│                 ┌────────────────────────┐                  │
+│                 │ TaskAnalysisService    │                  │
+│                 │ OllamaService          │                  │
+│                 │ (AI Analysis Logic)    │                  │
+│                 └────────────────────────┘                  │
+└─────────────────────────────────────────────────────────────┘
+                          ↓ Data Access
+┌─────────────────────────────────────────────────────────────┐
+│               REPOSITORY LAYER (DAO)                        │
+│  ┌──────────────┐ ┌──────────────┐                         │
+│  │UserRepository│ │TaskRepository│                         │
+│  │ (MongoRepo)  │ │ (MongoRepo)  │                         │
+│  └──────────────┘ └──────────────┘                         │
+└─────────────────────────────────────────────────────────────┘
+                          ↓ Persistence
+┌─────────────────────────────────────────────────────────────┐
+│                    MODEL/ENTITY LAYER                       │
+│  ┌──────────────┐ ┌──────────────────────────────┐        │
+│  │  User.java   │ │       Task.java              │        │
+│  │  @Document   │ │  @Document                   │        │
+│  │  fields:     │ │  fields:                     │        │
+│  │  - id        │ │  - id, title, description    │        │
+│  │  - name      │ │  - teacherId, studentIds     │        │
+│  │  - email     │ │  - fileUploaded, taskDone    │        │
+│  │  - role      │ │  - analysisReasoning ✨      │        │
+│  └──────────────┘ │  - analysisRecommendation ✨ │        │
+│                   │  - analysisConfidence ✨     │        │
+│                   └──────────────────────────────┘        │
+└─────────────────────────────────────────────────────────────┘
+                          ↓ Storage
+┌─────────────────────────────────────────────────────────────┐
+│                    DATABASE LAYER                           │
+│  MongoDB (Port 27017)                                       │
+│  ├── userdb.users (User collection)                        │
+│  └── taskdb.tasks (Task collection with AI analysis)       │
+└─────────────────────────────────────────────────────────────┘
+                          ↓ AI Analysis
+┌─────────────────────────────────────────────────────────────┐
+│                   OLLAMA LLM (Host)                         │
+│         http://host.docker.internal:11434                   │
+│  Models: phi3:mini, moondream, gemma3:1b                   │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## 💻 Prerequisites
 
-These tools should already be installed on your MacOS:
+### Required Software (macOS)
 
-- **Java 17** (OpenJDK)
-- **Maven** (Build tool)
-- **Docker Desktop** or **Colima** (Container runtime)
-- **Minikube** (Local Kubernetes)
-- **kubectl** (Kubernetes CLI)
-- **VSCode** (IDE with Java extensions)
-- **Ollama** (Local LLM - for agent-service) - [Install from ollama.ai](https://ollama.ai)
+- **Java 17** (OpenJDK) - `brew install openjdk@17`
+- **Maven 3.9+** - `brew install maven`
+- **Docker Desktop** - [Download](https://www.docker.com/products/docker-desktop)
+- **Minikube** - `brew install minikube`
+- **kubectl** - `brew install kubectl`
+- **Ollama** - [Install from ollama.ai](https://ollama.ai)
 
----
-
-## 📁 Project Structure
-
-```
-~/Downloads/microservices-k8s/
-│
-├── task-service/
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/com/example/task_service/
-│   │       │   ├── TaskServiceApplication.java
-│   │       │   ├── model/Task.java
-│   │       │   ├── repository/TaskRepository.java
-│   │       │   └── controller/TaskController.java
-│   │       └── resources/
-│   │           └── application.properties
-│   ├── target/
-│   │   └── task-service-0.0.1-SNAPSHOT.jar
-│   ├── pom.xml
-│   └── Dockerfile
-│
-├── user-service/
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/com/example/user_service/
-│   │       │   ├── UserServiceApplication.java
-│   │       │   ├── model/User.java
-│   │       │   ├── repository/UserRepository.java
-│   │       │   └── controller/UserController.java
-│   │       └── resources/
-│   │           └── application.properties
-│   ├── target/
-│   │   └── user-service-0.0.1-SNAPSHOT.jar
-│   ├── pom.xml
-│   └── Dockerfile
-│
-├── agent-service/
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/com/example/agentservice/
-│   │       │   ├── AgentServiceApplication.java
-│   │       │   ├── model/
-│   │       │   │   ├── TaskAnalysis.java
-│   │       │   │   ├── OllamaRequest.java
-│   │       │   │   └── OllamaResponse.java
-│   │       │   ├── service/
-│   │       │   │   ├── OllamaService.java
-│   │       │   │   └── TaskAnalysisService.java
-│   │       │   └── controller/
-│   │       │       └── AgentController.java
-│   │       └── resources/
-│   │           └── application.properties
-│   ├── target/
-│   │   └── agent-service-0.0.1-SNAPSHOT.jar
-│   ├── pom.xml
-│   └── Dockerfile
-│
-├── frontend/
-│   ├── index.html
-│   ├── nginx.conf
-│   └── Dockerfile
-│
-└── k8s-manifests/
-    ├── mongodb-deployment.yaml
-    ├── task-service-deployment.yaml
-    ├── user-service-deployment.yaml
-    ├── agent-service-deployment.yaml
-    └── frontend-deployment.yaml
-```
-
----
-
-## 🚀 Starting the Project
-
-### Step 1: Start Docker/Colima
+### Verify Installation
 
 ```bash
-# If using Docker Desktop:
+java -version    # Should show 17.x
+mvn -version     # Should show 3.9+
+docker --version
+minikube version
+kubectl version --client
+ollama --version
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. Start Docker & Minikube
+
+```bash
+# Start Docker Desktop
 open -a Docker
-# Wait for Docker whale icon to appear in menu bar (1-2 minutes)
 
-# OR if using Colima:
-colima start
-```
-
-### Step 2: Install and Start Ollama (Required for Agent Service)
-
-```bash
-# Install Ollama (if not already installed)
-# Visit https://ollama.ai and download for your OS
-# Or use: curl -fsSL https://ollama.ai/install.sh | sh
-
-# Start Ollama service
-ollama serve
-
-# Pull a model (in a separate terminal)
-ollama pull llama3.2
-# Or use: ollama pull mistral, ollama pull codellama, etc.
-
-# Verify Ollama is running
-curl http://localhost:11434/api/tags
-```
-
-**Note**: Ollama must be running on your host machine (not in Kubernetes) for the agent-service to connect to it.
-
-### Step 3: Start Minikube
-
-```bash
-# Start Minikube cluster
+# Start Minikube
 minikube start
 
-# Verify it's running
+# Verify
 minikube status
 ```
 
-Expected output:
-```
-minikube
-type: Control Plane
-host: Running
-kubelet: Running
-apiserver: Running
-kubeconfig: Configured
-```
-
-### Step 4: Check if Images Exist (First Time Skip This)
+### 2. Install Ollama Models
 
 ```bash
-# Use Minikube's Docker environment
+# Start Ollama (in separate terminal)
+ollama serve
+
+# Pull models (in another terminal)
+ollama pull phi3:mini      # 2.2GB - Fast text analysis
+ollama pull moondream      # 1.7GB - Vision model
+ollama pull gemma3:1b      # 815MB - Lightweight model
+
+# Verify
+ollama list
+```
+
+### 3. Build Services
+
+```bash
+cd /path/to/task-manager-microservices-k8s
+
+# Use Minikube's Docker
 eval $(minikube docker-env)
 
-# Check if images exist
-docker images | grep -E "(task-service|user-service|frontend|agent-service)"
+# Build all services
+for service in eureka-server api-gateway user-service task-service agent-service; do
+    cd $service
+    mvn clean package -DskipTests
+    docker build -t $service:1.0 .
+    cd ..
+done
+
+# Build frontends
+docker build -f frontend/Dockerfile-teacher -t teacher-frontend:1.0 frontend/
+docker build -f frontend/Dockerfile-student -t student-frontend:1.0 frontend/
 ```
 
-**If images don't exist** (first time or after cleanup):
+### 4. Deploy to Kubernetes
 
 ```bash
-# Build task-service
-cd ~/Downloads/microservices-k8s/task-service
-mvn clean package -DskipTests
-docker build -t task-service:1.0 .
-
-# Build user-service
-cd ~/Downloads/microservices-k8s/user-service
-mvn clean package -DskipTests
-docker build -t user-service:1.0 .
-
-# Build frontend
-cd ~/Downloads/microservices-k8s/frontend
-docker build -t frontend:1.0 .
-
-# Build agent-service
-cd ~/Downloads/microservices-k8s/agent-service
-mvn clean package -DskipTests
-docker build -t agent-service:1.0 .
-```
-
-### Step 5: Deploy to Kubernetes
-
-```bash
-cd ~/Downloads/microservices-k8s/k8s-manifests
+cd k8s-manifests
 
 # Deploy all services
 kubectl apply -f mongodb-deployment.yaml
-kubectl apply -f task-service-deployment.yaml
+kubectl apply -f eureka-server-deployment.yaml
+kubectl apply -f api-gateway-deployment.yaml
 kubectl apply -f user-service-deployment.yaml
+kubectl apply -f task-service-deployment.yaml
 kubectl apply -f agent-service-deployment.yaml
-kubectl apply -f frontend-deployment.yaml
+kubectl apply -f teacher-frontend-deployment.yaml
+kubectl apply -f student-frontend-deployment.yaml
 
-# Wait for all pods to be ready (may take 1-2 minutes)
+# Wait for all pods
 kubectl get pods -w
 ```
 
-Press `Ctrl+C` when all pods show `1/1` in READY column and `Running` in STATUS.
-
-Expected output:
-```
-NAME                            READY   STATUS    RESTARTS   AGE
-mongodb-xxx                     1/1     Running   0          2m
-task-service-xxx                1/1     Running   0          2m
-user-service-xxx                1/1     Running   0          2m
-agent-service-xxx               1/1     Running   0          2m
-frontend-xxx                    1/1     Running   0          2m
-```
-
-### Step 6: Access the Dashboard
+### 5. Access Dashboards
 
 ```bash
-# Open the frontend dashboard in your browser
-minikube service frontend
+# Open Teacher Dashboard
+minikube service teacher-frontend
+
+# Open Student Dashboard (in new terminal)
+minikube service student-frontend
+
+# Open Eureka Server
+minikube service eureka-server
 ```
-
-This will automatically open your browser with the dashboard URL (e.g., `http://127.0.0.1:xxxxx`)
-
-**Keep this terminal open** - closing it will stop the tunnel.
 
 ✅ **Your application is now running!**
 
 ---
 
-## 🛑 Stopping the Project
+## 🗄️ MongoDB Commands
 
-### Quick Stop (Preserves Everything)
+### View All Data
 
 ```bash
-# Stop Minikube (keeps all data and deployments)
-minikube stop
+# Get MongoDB pod name
+export MONGO_POD=$(kubectl get pods -l app=mongodb -o jsonpath='{.items[0].metadata.name}')
 
-# Stop Docker/Colima
-# Docker Desktop: Click whale icon → Quit
-# Colima:
-colima stop
+# Show all databases
+kubectl exec $MONGO_POD -- mongosh --quiet --eval "show dbs"
+
+# Show all users
+kubectl exec $MONGO_POD -- mongosh --quiet userdb --eval "db.users.find().toArray()"
+
+# Show all tasks with analysis
+kubectl exec $MONGO_POD -- mongosh --quiet taskdb --eval "db.tasks.find().toArray()"
+
+# Show tasks in pretty format
+kubectl exec $MONGO_POD -- mongosh --quiet taskdb --eval "db.tasks.find().pretty()"
+
+# Count documents
+kubectl exec $MONGO_POD -- mongosh --quiet userdb --eval "db.users.countDocuments()"
+kubectl exec $MONGO_POD -- mongosh --quiet taskdb --eval "db.tasks.countDocuments()"
 ```
 
-### Clean Stop (Removes Everything)
+### Query Specific Data
 
 ```bash
-# Delete all Kubernetes resources
-cd ~/Downloads/microservices-k8s/k8s-manifests
-kubectl delete -f .
+# Find task by ID
+kubectl exec $MONGO_POD -- mongosh --quiet taskdb --eval "db.tasks.findOne({_id: ObjectId('YOUR_TASK_ID')})"
 
-# Or delete Minikube cluster entirely
-minikube delete
+# Find tasks with AI analysis
+kubectl exec $MONGO_POD -- mongosh --quiet taskdb --eval "db.tasks.find({analysisReasoning: {\$exists: true}}).toArray()"
 
-# Stop Docker/Colima (same as above)
+# Find tasks by student
+kubectl exec $MONGO_POD -- mongosh --quiet taskdb --eval "db.tasks.find({studentIds: 'STUDENT_ID'}).toArray()"
 ```
 
----
-
-## 🧪 Testing the APIs
-
-### Using the Web Dashboard
-
-1. Open: `minikube service frontend`
-2. **Create Users**: Fill in name and email, click "Create User"
-3. **Create Tasks**: Select user, add title/description, click "Create Task"
-4. **Analyze Tasks with AI**: Click "🤖 Analyze" button on any task to get AI-powered completion analysis
-5. **Update**: Click "Edit" on users or "Complete/Mark Pending" on tasks
-6. **Delete**: Click "Delete" buttons
-
-**Agent Service Features**:
-- Analyzes if tasks are actually completed based on their content
-- Detects mismatches between marked status and actual completion
-- Provides confidence scores and recommendations
-- Uses Ollama LLM for intelligent task analysis
-
-### Using curl Commands
+### Interactive MongoDB Shell
 
 ```bash
-# Port-forward services (in separate terminals)
-kubectl port-forward service/user-service 8082:8082 &
-kubectl port-forward service/task-service 8081:8081 &
+# Enter MongoDB shell
+kubectl exec -it $MONGO_POD -- mongosh
 
-# Create a user
-curl -X POST http://localhost:8082/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"name":"John Doe","email":"john@example.com"}'
-
-# Get all users
-curl http://localhost:8082/api/users
-
-# Create a task (use user ID from above)
-curl -X POST http://localhost:8081/api/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Learn K8s","description":"Deploy microservices","userId":"USER_ID_HERE","completed":false}'
-
-# Get all tasks
-curl http://localhost:8081/api/tasks
-
-# Get tasks by user
-curl http://localhost:8081/api/tasks/user/USER_ID_HERE
-
-# Update a task
-curl -X PUT http://localhost:8081/api/tasks/TASK_ID_HERE \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Learn K8s","description":"Complete","userId":"USER_ID","completed":true}'
-
-# Delete a task
-curl -X DELETE http://localhost:8081/api/tasks/TASK_ID_HERE
-
-# Analyze a task with agent service
-kubectl port-forward service/agent-service 8083:8083 &
-curl -X POST http://localhost:8083/api/agent/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"id":"TASK_ID","title":"Learn K8s","description":"Deploy microservices","completed":false}'
-```
-
-### Using Postman
-
-1. Install: `brew install --cask postman`
-2. Create requests for the endpoints above
-3. Base URLs:
-   - User Service: `http://localhost:8082/api/users`
-   - Task Service: `http://localhost:8081/api/tasks`
-
----
-
-## 🛠️ Useful Commands
-
-### Viewing Logs
-
-```bash
-# View logs for a specific service
-kubectl logs deployment/user-service
-kubectl logs deployment/task-service
-kubectl logs deployment/mongodb
-kubectl logs deployment/frontend
-
-# Follow logs in real-time
-kubectl logs -f deployment/user-service
-
-# View last 50 lines
-kubectl logs deployment/user-service --tail=50
-
-# View logs for all containers with a label
-kubectl logs -l app=user-service
-```
-
-### Checking Status
-
-```bash
-# View all pods
-kubectl get pods
-
-# View all services
-kubectl get services
-
-# View all deployments
-kubectl get deployments
-
-# View everything
-kubectl get all
-
-# Detailed pod information
-kubectl describe pod POD_NAME
-
-# Check Minikube status
-minikube status
-
-# Check Docker images in Minikube
-eval $(minikube docker-env)
-docker images
-```
-
-### Scaling Services
-
-```bash
-# Scale user-service to 3 replicas
-kubectl scale deployment user-service --replicas=3
-
-# Scale back to 1
-kubectl scale deployment user-service --replicas=1
-
-# Check scaled pods
-kubectl get pods
-```
-
-### Restarting Services
-
-```bash
-# Restart a deployment (after code changes)
-kubectl rollout restart deployment/user-service
-kubectl rollout restart deployment/task-service
-kubectl rollout restart deployment/frontend
-
-# Check rollout status
-kubectl rollout status deployment/user-service
-
-# View rollout history
-kubectl rollout history deployment/user-service
-```
-
-### Accessing MongoDB
-
-```bash
-# Port-forward MongoDB
-kubectl port-forward service/mongodb 27017:27017
-
-# In another terminal, install mongosh
-brew install mongosh
-
-# Connect to MongoDB
-mongosh mongodb://localhost:27017
-
-# MongoDB commands:
+# Inside shell:
 show dbs
 use taskdb
-show collections
 db.tasks.find()
-
+db.tasks.find({taskDone: true})
 use userdb
 db.users.find()
 exit
 ```
 
-### Debugging
+### Clear All Data
 
 ```bash
-# Execute command inside a pod
-kubectl exec -it POD_NAME -- /bin/sh
-
-# Get pod events
-kubectl get events --sort-by=.metadata.creationTimestamp
-
-# Check resource usage
-kubectl top pods
-
-# Describe service to see endpoints
-kubectl describe service user-service
-
-# Test connectivity between pods
-kubectl run curl-test --image=curlimages/curl -i --rm --restart=Never -- \
-  curl -s http://user-service:8082/api/users
-```
-
-### Cleanup
-
-```bash
-# Delete specific deployment
-kubectl delete deployment user-service
-
-# Delete specific service
-kubectl delete service user-service
-
-# Delete everything in k8s-manifests
-cd ~/Downloads/microservices-k8s/k8s-manifests
-kubectl delete -f .
-
-# Clean up Minikube completely
-minikube delete
-
-# Remove Docker images
-eval $(minikube docker-env)
-docker rmi task-service:1.0
-docker rmi user-service:1.0
-docker rmi frontend:1.0
+# Drop all data (WARNING: Irreversible!)
+kubectl exec $MONGO_POD -- mongosh --quiet userdb --eval "db.dropDatabase();"
+kubectl exec $MONGO_POD -- mongosh --quiet taskdb --eval "db.dropDatabase();"
 ```
 
 ---
 
-## 🔧 Troubleshooting
+## 📡 API Endpoints
 
-### Problem: Pods showing `ErrImageNeverPull`
+### Via API Gateway (Recommended)
 
-**Solution**: Images weren't built in Minikube's Docker environment
+**Base URL:** `http://localhost:8080`
 
+First, port-forward the gateway:
 ```bash
-eval $(minikube docker-env)
-cd ~/Downloads/microservices-k8s/task-service
-docker build -t task-service:1.0 .
-
-cd ~/Downloads/microservices-k8s/user-service
-docker build -t user-service:1.0 .
-
-kubectl rollout restart deployment/task-service
-kubectl rollout restart deployment/user-service
+kubectl port-forward service/api-gateway 8080:8080
 ```
 
-### Problem: Service returning 404
-
-**Solution**: Controller/Repository not loaded
-
-```bash
-# Check logs for "Found X MongoDB repository interfaces"
-kubectl logs deployment/user-service | grep "Found"
-
-# Should show "Found 1" not "Found 0"
-# If shows 0, check package names match in all Java files
-```
-
-### Problem: Minikube won't start
-
-**Solution**: Docker isn't running
-
-```bash
-# Check Docker
-docker ps
-
-# If fails, start Docker Desktop or Colima
-open -a Docker
-# OR
-colima start
-
-# Then try again
-minikube start
-```
-
-### Problem: Can't access frontend
-
-**Solution**: Tunnel not running
-
-```bash
-# Make sure terminal is open with:
-minikube service frontend
-
-# Or get URL and open manually:
-minikube service frontend --url
-# Copy URL and paste in browser
-```
-
-### Problem: Frontend shows "Disconnected"
-
-**Solution**: Service endpoints wrong or services not running
-
-```bash
-# Check if services are running
-kubectl get pods
-
-# Check service endpoints
-kubectl get services
-
-# Test connectivity from frontend pod
-kubectl exec -it $(kubectl get pod -l app=frontend -o jsonpath='{.items[0].metadata.name}') -- sh
-apk add curl
-curl http://user-service:8082/api/users
-curl http://task-service:8081/api/tasks
-exit
-```
-
-### Problem: Agent service not working / Can't connect to Ollama
-
-**Solution**: Ollama not running or not accessible
-
-```bash
-# Check if Ollama is running on host
-curl http://localhost:11434/api/tags
-
-# If not running, start Ollama
-ollama serve
-
-# Verify model is available
-ollama list
-
-# If model not found, pull it
-ollama pull llama3.2
-
-# For Minikube, agent-service uses host.docker.internal to reach host
-# If this doesn't work, you may need to:
-# 1. Get your host IP: minikube ssh "route -n get default" | grep gateway
-# 2. Update agent-service-deployment.yaml to use that IP instead of host.docker.internal
-```
-
-### Problem: Agent analysis returns errors
-
-**Solution**: Check agent-service logs
-
-```bash
-# View agent-service logs
-kubectl logs deployment/agent-service
-
-# Check if Ollama is accessible from the pod
-kubectl exec -it $(kubectl get pod -l app=agent-service -o jsonpath='{.items[0].metadata.name}') -- sh
-# Inside pod:
-apk add curl
-curl http://host.docker.internal:11434/api/tags
-exit
-```
-
-### Problem: Data disappears after restart
-
-**Explanation**: MongoDB data is not persisted (by design for this simple setup)
-
-**Solution** (if you want persistent data):
-Add persistent volume to mongodb-deployment.yaml (advanced topic)
-
----
-
-## 📚 What Was Built
-
-### Technologies Used
-
-| Technology | Purpose | Port |
-|------------|---------|------|
-| Java 17 | Programming language | - |
-| Spring Boot 3.5.7 | Microservices framework | - |
-| Spring Data MongoDB | Database integration | - |
-| Maven | Build tool | - |
-| MongoDB 7.0 | NoSQL database | 27017 |
-| Docker | Containerization | - |
-| Kubernetes (Minikube) | Orchestration | - |
-| Nginx | Web server for frontend | 80 |
-| HTML/CSS/JavaScript | Frontend UI | - |
-
-### API Endpoints
-
-#### User Service (Port 8082)
+#### User Service
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/users` | Get all users |
 | GET | `/api/users/{id}` | Get user by ID |
-| POST | `/api/users` | Create new user |
+| POST | `/api/users` | Create user |
 | PUT | `/api/users/{id}` | Update user |
 | DELETE | `/api/users/{id}` | Delete user |
 
-#### Task Service (Port 8081)
+**Create User Example:**
+```bash
+curl -X POST http://localhost:8080/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John Doe","email":"john@example.com","role":"student"}'
+```
+
+#### Task Service
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/tasks` | Get all tasks |
 | GET | `/api/tasks/{id}` | Get task by ID |
-| GET | `/api/tasks/user/{userId}` | Get tasks by user |
-| POST | `/api/tasks` | Create new task |
-| PUT | `/api/tasks/{id}` | Update task |
+| GET | `/api/tasks/student/{id}` | Get tasks by student |
+| GET | `/api/tasks/teacher/{id}` | Get tasks by teacher |
+| POST | `/api/tasks` | Create task |
+| PUT | `/api/tasks/{id}` | Update task (with analysis) |
 | DELETE | `/api/tasks/{id}` | Delete task |
 
-### Kubernetes Resources
+**Create Task Example:**
+```bash
+curl -X POST http://localhost:8080/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Math Homework",
+    "description": "Complete Chapter 5",
+    "teacherId": "TEACHER_ID",
+    "studentIds": ["STUDENT_ID"],
+    "subject": "Mathematics"
+  }'
+```
 
-| Resource | Type | Replicas | Purpose |
-|----------|------|----------|---------|
-| mongodb | Deployment + Service | 1 | Database |
-| user-service | Deployment + Service | 1 | User management API |
-| task-service | Deployment + Service | 1 | Task management API |
-| frontend | Deployment + Service | 1 | Web UI |
+**Update Task with Analysis:**
+```bash
+curl -X PUT http://localhost:8080/api/tasks/TASK_ID \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Math Homework",
+    "taskDone": true,
+    "analysisReasoning": "Student completed all problems correctly",
+    "analysisRecommendation": "Excellent work, ready for next chapter",
+    "analysisConfidence": 0.95
+  }'
+```
+
+#### Agent Service
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/agent/health` | Health check |
+| POST | `/api/agent/analyze` | Analyze task |
+| POST | `/api/agent/analyze-file` | Analyze with file |
+
+**Analyze Task:**
+```bash
+curl -X POST http://localhost:8080/api/agent/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "TASK_ID",
+    "title": "Math Homework",
+    "description": "Complete Chapter 5",
+    "completed": true
+  }'
+```
+
+**Upload File for Analysis:**
+```bash
+curl -X POST http://localhost:8080/api/agent/analyze-file \
+  -F "file=@/path/to/assignment.pdf" \
+  -F "taskId=TASK_ID" \
+  -F "title=Math Homework" \
+  -F "description=Chapter 5 solutions"
+```
+
+---
+
+## 🏛️ MVC Architecture
+
+This project implements **Spring Boot MVC architecture** across microservices:
+
+### Model Layer (Entity)
+```java
+// User.java
+@Data
+@Document(collection = "users")
+public class User {
+    @Id private String id;
+    private String name;
+    private String email;
+    private String role; // "teacher" or "student"
+}
+
+// Task.java
+@Data
+@Document(collection = "tasks")
+public class Task {
+    @Id private String id;
+    private String title;
+    private String description;
+    // ... other fields
+    private String analysisReasoning;      // ✨ AI analysis
+    private String analysisRecommendation; // ✨ AI recommendation
+    private Double analysisConfidence;     // ✨ Confidence score
+}
+```
+
+### Repository Layer (Data Access)
+```java
+public interface UserRepository extends MongoRepository<User, String> {
+    User findByEmail(String email);
+}
+
+public interface TaskRepository extends MongoRepository<Task, String> {
+    List<Task> findByStudentIdsContaining(String studentId);
+    List<Task> findByTeacherId(String teacherId);
+}
+```
+
+### Service Layer (Business Logic)
+```java
+@Service
+@Slf4j
+public class TaskAnalysisService {
+    // AI analysis logic
+    public Mono<TaskAnalysis> analyzeTaskWithFile(...) {
+        // Saves analysis to MongoDB
+        return updateTaskInMongoDBWithAnalysis(...);
+    }
+}
+```
+
+### Controller Layer (REST API)
+```java
+@RestController
+@RequestMapping("/api/tasks")
+@Slf4j
+public class TaskController {
+    @PutMapping("/{id}")
+    public Task updateTask(@PathVariable String id, @RequestBody Task task) {
+        log.info("Updating task with analysis...");
+        return taskRepository.save(task);
+    }
+}
+```
+
+### View Layer (Frontend)
+- **student.html**: JavaScript fetches from `/api/tasks`, displays analysis
+- **teacher.html**: JavaScript creates tasks, triggers analysis
+
+---
+
+## 🔧 Useful Commands
+
+### Service Management
+
+```bash
+# Restart a service
+kubectl rollout restart deployment/task-service
+
+# Scale a service
+kubectl scale deployment/user-service --replicas=3
+
+# View logs
+kubectl logs deployment/task-service --tail=50 -f
+
+# Execute command in pod
+kubectl exec -it POD_NAME -- /bin/bash
+```
+
+### Debugging
+
+```bash
+# Check pod status
+kubectl get pods
+kubectl describe pod POD_NAME
+
+# Check service endpoints
+kubectl get services
+kubectl describe service user-service
+
+# Test connectivity
+kubectl run curl-test --image=curlimages/curl -i --rm --restart=Never -- \
+  curl -s http://user-service:8082/api/users
+
+# View events
+kubectl get events --sort-by=.metadata.creationTimestamp
+```
+
+### Cleanup
+
+```bash
+# Delete all deployments
+kubectl delete -f k8s-manifests/
+
+# Delete Minikube cluster
+minikube delete
+
+# Remove Docker images
+eval $(minikube docker-env)
+docker rmi task-service:1.0 user-service:1.0 agent-service:1.0
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Issue: Analysis not persisting
+
+**Solution:** Check if analysis fields are in Task model:
+```bash
+kubectl logs deployment/task-service | grep "analysisReasoning"
+```
+
+### Issue: Can't connect to Ollama
+
+**Solution:** Verify Ollama is running on host:
+```bash
+curl http://localhost:11434/api/tags
+
+# If fails, start Ollama:
+ollama serve
+```
+
+### Issue: Frontend not loading tasks
+
+**Solution:** Check browser console and verify API Gateway:
+```bash
+kubectl logs deployment/api-gateway --tail=20
+kubectl port-forward service/api-gateway 8080:8080
+curl http://localhost:8080/api/tasks
+```
+
+### Issue: Pods not starting
+
+**Solution:** Check pod events:
+```bash
+kubectl describe pod POD_NAME
+kubectl logs POD_NAME
+```
+
+---
+
+## 📚 Technologies Used
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Java | 17 | Programming language |
+| Spring Boot | 3.5.7 | Microservices framework |
+| Spring Cloud | 2023.0.0 | Eureka, Gateway, LoadBalancer |
+| MongoDB | 7.0 | NoSQL database |
+| Docker | Latest | Containerization |
+| Kubernetes | 1.34 | Orchestration |
+| Minikube | Latest | Local K8s cluster |
+| Nginx | Alpine | Web server |
+| Ollama | Latest | Local LLM runtime |
+| Lombok | Latest | Boilerplate reduction |
 
 ---
 
 ## 🎓 Learning Outcomes
 
-By completing this project, you've learned:
-
-✅ How to create Spring Boot microservices  
-✅ How to containerize Java applications with Docker  
-✅ How to deploy applications to Kubernetes  
-✅ How to connect microservices to MongoDB  
-✅ How to create Kubernetes deployments and services  
-✅ How to build a frontend that consumes REST APIs  
-✅ How to use kubectl for managing Kubernetes resources  
-✅ How to debug containerized applications  
-✅ How to work with Minikube for local development  
-✅ Microservices architecture patterns  
-
----
-
-## 📝 Quick Reference Card
-
-### Start Everything
-```bash
-# 1. Start Docker
-open -a Docker  # or: colima start
-
-# 2. Start Minikube
-minikube start
-
-# 3. Deploy (if not already deployed)
-cd ~/Downloads/microservices-k8s/k8s-manifests
-kubectl apply -f .
-
-# 4. Open dashboard
-minikube service frontend
-```
-
-### Stop Everything
-```bash
-# 1. Stop Minikube
-minikube stop
-
-# 2. Stop Docker
-# Docker Desktop: Click quit
-# Colima: colima stop
-```
-
-### Check Status
-```bash
-kubectl get pods
-kubectl get services
-minikube status
-```
-
-### View Logs
-```bash
-kubectl logs deployment/user-service
-kubectl logs deployment/task-service
-```
-
-### Rebuild Service
-```bash
-eval $(minikube docker-env)
-cd ~/Downloads/microservices-k8s/SERVICE_NAME
-mvn clean package -DskipTests
-docker build -t SERVICE_NAME:1.0 .
-kubectl rollout restart deployment/SERVICE_NAME
-```
-
----
-
-## 🌟 Next Steps (Optional Enhancements)
-
-1. **Add Authentication**: Implement JWT-based authentication
-2. **Add Persistent Storage**: Use PersistentVolumes for MongoDB
-3. **Add API Gateway**: Use Spring Cloud Gateway
-4. **Add Service Discovery**: Use Eureka or Consul
-5. **Add Monitoring**: Use Prometheus and Grafana
-6. **Add Logging**: Use ELK stack (Elasticsearch, Logstash, Kibana)
-7. **Add CI/CD**: Use GitHub Actions or Jenkins
-8. **Deploy to Cloud**: AWS EKS, Google GKE, or Azure AKS
+✅ Microservices architecture with Spring Boot  
+✅ Service discovery with Eureka  
+✅ API Gateway pattern  
+✅ MongoDB integration with Spring Data  
+✅ Docker containerization  
+✅ Kubernetes orchestration  
+✅ REST API design  
+✅ AI integration with Ollama  
+✅ MVC architecture  
+✅ Role-based frontends  
+✅ Persistent data storage  
+✅ Full CRUD operations  
 
 ---
 
 ## 📞 Support
 
-If you encounter issues:
-
-1. Check the [Troubleshooting](#troubleshooting) section
-2. View service logs: `kubectl logs deployment/SERVICE_NAME`
-3. Check pod status: `kubectl describe pod POD_NAME`
-4. Verify Docker is running: `docker ps`
-5. Verify Minikube is running: `minikube status`
+**Issue?** Check:
+1. [Troubleshooting](#-troubleshooting) section
+2. Service logs: `kubectl logs deployment/SERVICE_NAME`
+3. MongoDB data: `kubectl exec $MONGO_POD -- mongosh`
+4. Eureka dashboard: `minikube service eureka-server`
 
 ---
 
-**Project Location**: `~/Downloads/microservices-k8s/`
+## 🚀 Next Steps
 
-**Last Updated**: November 2, 2025
-
-**Status**: ✅ Complete and Working
+- [ ] Add JWT authentication
+- [ ] Add PersistentVolumes
+- [ ] Add Prometheus monitoring
+- [ ] Add ELK logging stack
+- [ ] Deploy to cloud (EKS/GKE/AKS)
+- [ ] Add CI/CD pipeline
+- [ ] Add unit tests
+- [ ] Add API documentation (Swagger)
 
 ---
 
-**Happy Coding! 🚀**
+**Last Updated:** December 20, 2025  
+**Status:** ✅ Production Ready  
+**Author:** Abhay Bhandarkar
+
+---
+
+**⭐ Star this repo if you found it helpful!**

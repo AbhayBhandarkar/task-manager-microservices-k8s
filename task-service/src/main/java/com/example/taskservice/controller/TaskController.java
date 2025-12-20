@@ -2,12 +2,14 @@ package com.example.taskservice.controller;
 
 import com.example.taskservice.model.Task;
 import com.example.taskservice.repository.TaskRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/tasks")
 public class TaskController {
@@ -67,8 +69,14 @@ public class TaskController {
     
     @PutMapping("/{id}")
     public Task updateTask(@PathVariable String id, @RequestBody Task task) {
+        log.info("Updating task {}: fileUploaded={}, taskDone={}, analysisReasoning={}, analysisRecommendation={}, analysisConfidence={}", 
+                id, task.isFileUploaded(), task.isTaskDone(), 
+                task.getAnalysisReasoning(), task.getAnalysisRecommendation(), task.getAnalysisConfidence());
         task.setId(id);
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+        log.info("Task {} saved successfully with analysis fields: reasoning={}, recommendation={}, confidence={}", 
+                id, savedTask.getAnalysisReasoning(), savedTask.getAnalysisRecommendation(), savedTask.getAnalysisConfidence());
+        return savedTask;
     }
     
     @DeleteMapping("/{id}")

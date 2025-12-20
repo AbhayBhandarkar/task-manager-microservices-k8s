@@ -48,18 +48,22 @@ public class TaskAnalysisService {
         analysis.setRecommendation("Task completed based on file upload.");
         analysis.setGrade(null); // No grading in CPU-friendly mode
         
-        // Update task in MongoDB - mark as done without AI analysis
-        // Use doOnSuccess to ensure we wait for the update to complete
-        return updateTaskInMongoDB(taskId, true, fileUrl, null)
-            .doOnSuccess(v -> log.info("Successfully updated task {} in MongoDB: taskDone=true, fileUploaded=true", taskId))
+        // Update task in MongoDB - mark as done and save analysis
+        return updateTaskInMongoDBWithAnalysis(taskId, true, fileUrl, null, analysis)
+            .doOnSuccess(v -> log.info("Successfully updated task {} in MongoDB with analysis", taskId))
             .doOnError(e -> log.error("Failed to update task {} in MongoDB: {}", taskId, e.getMessage()))
             .then(Mono.just(analysis));
     }
     
     public Mono<Void> updateTaskInMongoDB(String taskId, boolean taskDone, String fileUrl, Double grade) {
+        return updateTaskInMongoDBWithAnalysis(taskId, taskDone, fileUrl, grade, null);
+    }
+    
+    @SuppressWarnings("unchecked")
+    public Mono<Void> updateTaskInMongoDBWithAnalysis(String taskId, boolean taskDone, String fileUrl, Double grade, TaskAnalysis analysis) {
         WebClient webClient = webClientBuilder.baseUrl(taskServiceUrl).build();
         
-        log.info("Updating task {} in MongoDB: taskDone={}, fileUrl={}, grade={}", taskId, taskDone, fileUrl, grade);
+        log.info("Updating task {} in MongoDB: taskDone={}, fileUrl={}, grade={}, with analysis={}", taskId, taskDone, fileUrl, grade, analysis != null);
         
         // First get the task
         return webClient.get()
@@ -76,17 +80,23 @@ public class TaskAnalysisService {
                 if (grade != null) {
                     task.put("grade", grade);
                 }
+                // Save analysis data if provided
+                if (analysis != null) {
+                    task.put("analysisReasoning", analysis.getReasoning());
+                    task.put("analysisRecommendation", analysis.getRecommendation());
+                    task.put("analysisConfidence", analysis.getConfidence());
+                }
                 // Also update completed for backward compatibility
                 task.put("completed", taskDone);
                 
-                log.info("Updating task with new values: fileUploaded=true, taskDone={}, fileUrl={}", taskDone, fileUrl);
+                log.info("Updating task with new values: fileUploaded=true, taskDone={}, fileUrl={}, analysis saved", taskDone, fileUrl);
                 
                 return webClient.put()
                     .uri("/api/tasks/{id}", taskId)
                     .bodyValue(task)
                     .retrieve()
                     .bodyToMono(Void.class)
-                    .doOnSuccess(v -> log.info("Successfully updated task {} in MongoDB", taskId))
+                    .doOnSuccess(v -> log.info("Successfully updated task {} in MongoDB with analysis", taskId))
                     .doOnError(err -> log.error("Failed to update task {}: {}", taskId, err.getMessage()));
             })
             .doOnError(error -> log.error("Error updating task in MongoDB: {}", error.getMessage(), error))
